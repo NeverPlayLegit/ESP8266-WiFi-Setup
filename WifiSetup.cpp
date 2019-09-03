@@ -1,20 +1,10 @@
 #include "WifiSetup.h"
 
-WifiSetup::WifiSetup() {
-    saveConfig();
+WifiSetup::WifiSetup(const char* apSsid, const char* apPassword) {
+    this->apSsid = apSsid;
+    this->apPassword = apPassword;
     SPIFFS.begin();
     loadConfig();
-}
-
-void WifiSetup::parseBytes(const char* str, char sep, byte* bytes, int maxBytes, int base) {
-  for (int i = 0; i < maxBytes; i++) {
-    bytes[i] = strtoul(str, NULL, base);  // Convert byte
-    str = strchr(str, sep);               // Find next separator
-    if (str == NULL || *str == '\0') {
-      break;                            // No more separators, exit
-    }
-    str++;                                // Point to next character after separator
-  }
 }
 
 void WifiSetup::loadConfig() {
@@ -36,12 +26,6 @@ void WifiSetup::handleRoot() {
     file.close();
 }
 
-IPAddress WifiSetup::parseIP(const char *str) {
-    byte b[4];
-    parseBytes(str, '.', b, 4, 10);
-    return IPAddress(b[0], b[1], b[2], b[3]);
-}
-
 void WifiSetup::doWifiConnection() {
     WiFi.disconnect(true);
     WiFi.softAPdisconnect(true);
@@ -57,8 +41,6 @@ void WifiSetup::doWifiConnection() {
         serverDNS.setErrorReplyCode(DNSReplyCode::NoError);
         serverDNS.start(53, "*", ip);
     } else {
-
-        Serial.println("Try connect");
         WiFi.config(config.ip, config.gateway, config.subnet);
         WiFi.begin(config.ssid, config.password);
         int timer = 0;
@@ -88,6 +70,23 @@ void WifiSetup::doWifiConnection() {
     serverWeb.begin();
 }
 
+// credits: https://stackoverflow.com/a/35236734
+void WifiSetup::parseBytes(const char* str, char sep, byte* bytes, int maxBytes, int base) {
+  for (int i = 0; i < maxBytes; i++) {
+    bytes[i] = strtoul(str, NULL, base);  // Convert byte
+    str = strchr(str, sep);               // Find next separator
+    if (str == NULL || *str == '\0') {
+      break;                            // No more separators, exit
+    }
+    str++;                                // Point to next character after separator
+  }
+}
+
+IPAddress WifiSetup::parseIP(const char *str) {
+    byte b[4];
+    parseBytes(str, '.', b, 4, 10);
+    return IPAddress(b[0], b[1], b[2], b[3]);
+}
 
 void WifiSetup::handleSettings() {
     config.mode = strcmp(serverWeb.arg("mode").c_str(), "0") == 0 ? 0 : 1;
@@ -104,17 +103,16 @@ void WifiSetup::handleSettings() {
     doWifiConnection();
 }
 
+ESP8266WebServer* WifiSetup::getWebServer() {
+    return &serverWeb;
+}
+
+void WifiSetup::addWebServerOn(const String &uri, HTTPMethod method, std::function<void(void)> fn) {
+    serverWeb.on(uri, method, fn);
+}
+
 const char* WifiSetup::getWebServerArgument(const char* arg) {
     return serverWeb.arg(arg).c_str();
-}
-
-void WifiSetup::sendTextWebServer(const char* text) {
-    serverWeb.send(200, "text/html", text);
-}
-
-typedef std::function<void(void)> THandlerFunction;
-void WifiSetup::addWebServerOn(const String &uri, HTTPMethod method, THandlerFunction fn) {
-    serverWeb.on(uri, method, fn);
 }
 
 void WifiSetup::update() {

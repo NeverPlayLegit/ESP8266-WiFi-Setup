@@ -36,15 +36,14 @@ private:
     IPAddress parseIP(const char* str);
 
 public:
-    WifiSetup();
+    WifiSetup(const char* apSsid, const char* apPassword);
 
     void doWifiConnection();
 
     const char *getWebServerArgument(const char* arg);
-    void sendTextWebServer(const char* text);
-
-    typedef std::function<void(void)> THandlerFunction;
-    void addWebServerOn(const String &uri, HTTPMethod method, THandlerFunction fn);
+    void addWebServerOn(const String& uri, HTTPMethod method, std::function<void(void)> fn);
+    
+    ESP8266WebServer* getWebServer();
 
     void update();
 };

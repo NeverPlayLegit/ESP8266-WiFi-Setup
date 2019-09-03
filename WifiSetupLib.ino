@@ -1,17 +1,17 @@
 #include "WifiSetup.h"
 
-WifiSetup wifi;
+WifiSetup wifi("test", "test7777");
 
 void setup() {
     Serial.begin(9600);
   
-    wifi.addWebServerOn("/api", HTTP_GET, handleWebRequest);
+    wifi.addWebServerOn("/somerequest", HTTP_GET, handleWebRequest);
     wifi.doWifiConnection();
 }
 
 void handleWebRequest() {
-    //wifi.getWebServerArgument("type...");
-    wifi.sendTextWebServer("OK");
+    //wifi.getWebServerArgument("argument");
+    wifi.getWebServer()->send(200, "text/html", "Test!");
 }
 
 void loop() {
